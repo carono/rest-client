@@ -1,0 +1,19 @@
+{
+  "name": "carono/rest-client",
+  "description": "",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "carono",
+      "email": "info@carono.ru"
+    }
+  ],
+  "require": {
+    "guzzlehttp/guzzle": "^6.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "carono\\rest\\client": ""
+    }
+  }
+}
