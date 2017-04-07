@@ -1,6 +1,6 @@
 <?php
 
-namespace carono\rest\client;
+namespace carono\rest;
 
 class Client
 {
@@ -14,22 +14,44 @@ class Client
 
 
     protected $protocol = 'https';
-    protected $domain = '';
+    protected $url = '';
     protected $type = 'json';
     protected $_guzzleOptions = [];
     protected $_guzzle;
+    protected $error;
 
     /**
      * Client constructor.
      * @param array $config
      */
-    public function __construct(array $config)
+    public function __construct(array $config = [])
     {
         $this->_guzzle = new \GuzzleHttp\Client();
         foreach ($config as $prop => $value) {
             $this->$prop = $value;
         }
         $this->guzzleOptions();
+        $this->init();
+    }
+
+    public function init()
+    {
+
+    }
+
+    public function validate($data)
+    {
+        foreach ($data as $param => $value) {
+            if (!$this->validateParam($param, $value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public function validateParam($param, $value)
+    {
+        return true;
     }
 
     /**
@@ -38,7 +60,7 @@ class Client
      */
     protected function buildUrl($url)
     {
-        return $this->protocol . '://' . $this->domain . '/' . $url;
+        return $this->protocol . '://' . $this->url . '/' . $url;
     }
 
     /**
@@ -64,6 +86,9 @@ class Client
      */
     protected function prepareData($data)
     {
+        if (!$this->validate($data)) {
+            throw new \Exception($this->error);
+        }
         switch ($this->type) {
             case self::TYPE_JSON:
                 $data = \GuzzleHttp\json_encode($data);
