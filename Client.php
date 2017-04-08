@@ -20,7 +20,7 @@ class Client
     protected $type = 'json';
     protected $_guzzleOptions = [];
     protected $_guzzle;
-    protected $error;
+    protected $_errors;
 
     /**
      * Client constructor.
@@ -43,16 +43,56 @@ class Client
         }
     }
 
-    public function validate($data)
+    public function getError($asString = true)
     {
-        foreach ($data as $param => $value) {
-            if (!$this->validateParam($param, $value)) {
-                return false;
-            }
+        if (!$asString) {
+            return $this->_errors;
         }
-        return true;
+        $error = ['Ошибка валидации параметров'];
+        foreach ($this->_errors as $param => $errors) {
+            $error[] = $param . ' - ' . join('; ', $errors);
+        }
+        return join("\n", $error);
     }
 
+    public function validate(array $data)
+    {
+        foreach ($data as $param => $value) {
+            $this->validateParam($param, $value);
+        }
+        return !count($this->_errors);
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function filter(array $data)
+    {
+        $result = [];
+        foreach ($data as $param => $value) {
+            if (!is_null($filtered = $this->filterParam($param, $value))) {
+                $result[$param] = $filtered;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * @param $param
+     * @param $value
+     * @return mixed
+     */
+    public function filterParam($param, $value)
+    {
+        return $value;
+    }
+
+    /**
+     * @param $param
+     * @param $value
+     * @return bool
+     */
     public function validateParam($param, $value)
     {
         return true;
@@ -78,14 +118,16 @@ class Client
      */
     public function getContent($urlRequest, $data = [])
     {
+        $options = [];
         $this->guzzleOptions();
         $url = $this->buildUrl($urlRequest);
         $client = new \GuzzleHttp\Client();
+        $data = $this->prepareData($data);
         if ($this->method == 'GET') {
-            $url = (strpos($url, '?') ? '&' : '?') . build_query($data);
+            $url = (strpos($url, '?') ? '&' : '?') . $data;
         } else {
             $options = [
-                'body' => $this->prepareData($data)
+                'body' => $data
             ];
         }
         $request = $client->request($this->method, $url, array_merge($options, $this->_guzzleOptions));
@@ -106,15 +148,21 @@ class Client
         return null;
     }
 
+    public function addError($param, $message)
+    {
+        $this->_errors[$param][] = $message;
+    }
+
     /**
      * @param $data
      * @return string
      * @throws \Exception
      */
-    protected function prepareData($data)
+    protected function prepareData(array $data)
     {
+        $data = $this->filter($data);
         if (!$this->validate($data)) {
-            throw new \Exception($this->error);
+            throw new \Exception($this->getError());
         }
         switch ($this->type) {
             case self::TYPE_JSON:
