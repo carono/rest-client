@@ -3,6 +3,7 @@
 namespace carono\rest;
 
 use function GuzzleHttp\Psr7\build_query;
+use GuzzleHttp\Client as GuzzleClient;
 
 class Client
 {
@@ -28,7 +29,7 @@ class Client
      */
     public function __construct(array $config = [])
     {
-        $this->_guzzle = new \GuzzleHttp\Client();
+        $this->_guzzle = new GuzzleClient();
         foreach ($config as $prop => $value) {
             $this->$prop = $value;
         }
@@ -121,10 +122,10 @@ class Client
         $options = [];
         $this->guzzleOptions();
         $url = $this->buildUrl($urlRequest);
-        $client = new \GuzzleHttp\Client();
+        $client = $this->_guzzle;
         $data = $this->prepareData($data);
         if ($this->method == 'GET') {
-            $url = (strpos($url, '?') ? '&' : '?') . $data;
+            $url = (strpos($url, '?') ? '&' : '?') . build_query($data);
         } else {
             $options = [
                 'body' => $data
@@ -155,7 +156,7 @@ class Client
 
     /**
      * @param $data
-     * @return string
+     * @return string|array
      * @throws \Exception
      */
     protected function prepareData(array $data)
@@ -173,6 +174,7 @@ class Client
                 break;
             default:
                 throw new \Exception('Type is not supported');
+                break;
         }
         return $data;
     }
