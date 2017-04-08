@@ -2,16 +2,18 @@
 
 namespace carono\rest;
 
+use function GuzzleHttp\Psr7\build_query;
+
 class Client
 {
     public $login;
     public $password;
     public $proxy;
     public $method = 'GET';
+    public $postDataInBody = false;
 
     const TYPE_JSON = 'json';
     const TYPE_XML = 'xml';
-
 
     protected $protocol = 'https';
     protected $url = '';
@@ -30,13 +32,15 @@ class Client
         foreach ($config as $prop => $value) {
             $this->$prop = $value;
         }
-        $this->guzzleOptions();
         $this->init();
     }
 
     public function init()
     {
-
+        $this->method = strtoupper($this->method);
+        if (!in_array($this->method, ['GET', 'POST'])) {
+            $this->method = 'GET';
+        }
     }
 
     public function validate($data)
@@ -60,7 +64,11 @@ class Client
      */
     protected function buildUrl($url)
     {
-        return $this->protocol . '://' . $this->url . '/' . $url;
+        if (strpos($this->url, '://')) {
+            return $this->url . ($url ? '/' . $url : '');
+        } else {
+            return $this->protocol . '://' . $this->url . ($url ? '/' . $url : '');
+        }
     }
 
     /**
@@ -70,13 +78,32 @@ class Client
      */
     public function getContent($urlRequest, $data = [])
     {
+        $this->guzzleOptions();
         $url = $this->buildUrl($urlRequest);
         $client = new \GuzzleHttp\Client();
-        $options = [
-            'body' => $this->prepareData($data)
-        ];
+        if ($this->method == 'GET') {
+            $url = (strpos($url, '?') ? '&' : '?') . build_query($data);
+        } else {
+            $options = [
+                'body' => $this->prepareData($data)
+            ];
+        }
         $request = $client->request($this->method, $url, array_merge($options, $this->_guzzleOptions));
-        return $request->getBody()->getContents();
+        return $this->unSerialize($request->getBody()->getContents());
+    }
+
+    /**
+     * @param $data
+     * @return mixed|null|\SimpleXMLElement
+     */
+    public function unSerialize($data)
+    {
+        if ($this->type == self::TYPE_JSON) {
+            return \GuzzleHttp\json_decode($data);
+        } elseif ($this->type == self::TYPE_XML) {
+            return simplexml_load_string($data);
+        }
+        return null;
     }
 
     /**
