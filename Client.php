@@ -125,7 +125,7 @@ class Client
         $client = $this->_guzzle;
         $data = $this->prepareData($data);
         if ($this->method == 'GET') {
-            $url = (strpos($url, '?') ? '&' : '?') . build_query($data);
+            $url = $url. (strpos($url, '?') ? '&' : '?') . build_query($data);
         } else {
             $options = [
                 'body' => $data
@@ -164,6 +164,9 @@ class Client
         $data = $this->filter($data);
         if (!$this->validate($data)) {
             throw new \Exception($this->getError());
+        }
+        if ($this->method == 'GET') {
+            return $data;
         }
         switch ($this->type) {
             case self::TYPE_JSON:
