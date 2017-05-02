@@ -15,10 +15,12 @@ class Client
 
     const TYPE_JSON = 'json';
     const TYPE_XML = 'xml';
+    const TYPE_FORM = 'form';
 
     protected $protocol = 'https';
     protected $url = '';
     protected $type = 'json';
+    protected $output_type;
     protected $_guzzleOptions = [];
     protected $_guzzle;
     protected $_errors;
@@ -125,11 +127,11 @@ class Client
         $client = $this->_guzzle;
         $data = $this->prepareData($data);
         if ($this->method == 'GET') {
-            $url = $url. (strpos($url, '?') ? '&' : '?') . build_query($data);
+            $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
+        } elseif ($this->postDataInBody) {
+            $options = ['body' => $data];
         } else {
-            $options = [
-                'body' => $data
-            ];
+            $options = ['form_params' => $data];
         }
         $request = $client->request($this->method, $url, array_merge($options, $this->_guzzleOptions));
         return $this->unSerialize($request->getBody()->getContents());
@@ -141,12 +143,17 @@ class Client
      */
     public function unSerialize($data)
     {
-        if ($this->type == self::TYPE_JSON) {
-            return \GuzzleHttp\json_decode($data);
-        } elseif ($this->type == self::TYPE_XML) {
-            return simplexml_load_string($data);
+        $type = $this->output_type ? $this->output_type : $this->type;
+
+        switch ($type) {
+            case self::TYPE_JSON:
+                return \GuzzleHttp\json_decode($data);
+                break;
+            case self::TYPE_XML:
+                return simplexml_load_string($data);
+                break;
         }
-        return null;
+        return $data;
     }
 
     public function addError($param, $message)
@@ -175,6 +182,8 @@ class Client
             case self::TYPE_XML:
                 throw new \Exception('Xml type is not implemented yet');
                 break;
+            case self::TYPE_FORM:
+                break;
             default:
                 throw new \Exception('Type is not supported');
                 break;
@@ -200,6 +209,10 @@ class Client
             case self::TYPE_XML:
                 $options['headers']['content-type'] = 'application/xml';
                 break;
+            case self::TYPE_FORM:
+                $options['headers']['content-type'] = 'application/x-www-form-urlencoded';
+                break;
+
             default:
                 throw new \Exception('Type is not supported');
         }
