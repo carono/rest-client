@@ -4,6 +4,8 @@ namespace carono\rest;
 
 use function GuzzleHttp\Psr7\build_query;
 use GuzzleHttp\Client as GuzzleClient;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
 class Client
 {
@@ -12,6 +14,10 @@ class Client
     public $proxy;
     public $method = 'GET';
     public $postDataInBody = false;
+    /**
+     * @var ResponseInterface
+     */
+    public $request;
 
     const TYPE_JSON = 'json';
     const TYPE_XML = 'xml';
@@ -22,6 +28,7 @@ class Client
     protected $type = 'json';
     protected $output_type;
     protected $_guzzleOptions = [];
+    protected $_custom_guzzle_options = [];
     protected $_guzzle;
     protected $_errors;
 
@@ -101,6 +108,11 @@ class Client
         return true;
     }
 
+    public function setGuzzleOptions($array)
+    {
+        $this->_custom_guzzle_options = $array;
+    }
+
     /**
      * @param $url
      * @return string
@@ -115,6 +127,14 @@ class Client
     }
 
     /**
+     * @return GuzzleClient
+     */
+    public function getGuzzle()
+    {
+        return $this->_guzzle;
+    }
+
+    /**
      * @param $urlRequest
      * @param array $data
      * @return string
@@ -124,7 +144,7 @@ class Client
         $options = [];
         $this->guzzleOptions();
         $url = $this->buildUrl($urlRequest);
-        $client = $this->_guzzle;
+        $client = $this->getGuzzle();
         $data = $this->prepareData($data);
         if ($this->method == 'GET') {
             $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
@@ -134,6 +154,7 @@ class Client
             $options = ['form_params' => $data];
         }
         $request = $client->request($this->method, $url, array_merge($options, $this->_guzzleOptions));
+        $this->request = $request;
         return $this->unSerialize($request->getBody()->getContents());
     }
 
@@ -219,6 +240,6 @@ class Client
         if ($this->login || $this->password) {
             $options['auth'] = [$this->login, $this->password];
         }
-        $this->_guzzleOptions = $options;
+        $this->_guzzleOptions = array_merge($options, $this->_custom_guzzle_options);
     }
 }
