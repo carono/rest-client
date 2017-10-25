@@ -34,6 +34,7 @@ class Client
 
     /**
      * Client constructor.
+     *
      * @param array $config
      */
     public function __construct(array $config = [])
@@ -53,6 +54,10 @@ class Client
         }
     }
 
+    /**
+     * @param bool $asString
+     * @return string
+     */
     public function getError($asString = true)
     {
         if (!$asString) {
@@ -137,7 +142,7 @@ class Client
     /**
      * @param $urlRequest
      * @param array $data
-     * @return string
+     * @return string|\stdClass|\SimpleXMLElement
      */
     public function getContent($urlRequest, $data = [])
     {
@@ -177,9 +182,22 @@ class Client
         return $data;
     }
 
+    /**
+     * @param $param
+     * @param $message
+     */
     public function addError($param, $message)
     {
         $this->_errors[$param][] = $message;
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    protected function beforePrepareData(array $data)
+    {
+        return $data;
     }
 
     /**
@@ -189,7 +207,9 @@ class Client
      */
     protected function prepareData(array $data)
     {
+        $data = $this->beforePrepareData($data);
         $data = $this->filter($data);
+
         if (!$this->validate($data)) {
             throw new \Exception($this->getError());
         }
