@@ -14,6 +14,8 @@ class Client
     public $proxy;
     public $method = 'GET';
     public $postDataInBody = false;
+    public $useAuth = true;
+
     /**
      * @var ResponseInterface
      */
@@ -257,7 +259,7 @@ class Client
             default:
                 throw new \Exception('Type is not supported');
         }
-        if ($this->login || $this->password) {
+        if (($this->login || $this->password) && $this->useAuth) {
             $options['auth'] = [$this->login, $this->password];
         }
         $this->_guzzleOptions = array_merge($options, $this->_custom_guzzle_options);
