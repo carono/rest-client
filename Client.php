@@ -167,6 +167,24 @@ class Client
 
     /**
      * @param $data
+     * @return mixed
+     */
+    protected function unSerializeJson($data)
+    {
+        return \GuzzleHttp\json_decode($data);
+    }
+
+    /**
+     * @param $data
+     * @return \SimpleXMLElement
+     */
+    protected function unSerializeXml($data)
+    {
+        return simplexml_load_string($data);
+    }
+
+    /**
+     * @param $data
      * @return mixed|null|\SimpleXMLElement
      */
     public function unSerialize($data)
@@ -175,10 +193,10 @@ class Client
 
         switch ($type) {
             case self::TYPE_JSON:
-                return \GuzzleHttp\json_decode($data);
+                return $this->unSerializeJson($data);
                 break;
             case self::TYPE_XML:
-                return simplexml_load_string($data);
+                return $this->unSerializeXml($data);
                 break;
         }
         return $data;
