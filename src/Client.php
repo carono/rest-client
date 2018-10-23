@@ -24,6 +24,7 @@ class Client
     const TYPE_JSON = 'json';
     const TYPE_XML = 'xml';
     const TYPE_FORM = 'form';
+    const TYPE_MULTIPART = 'multipart';
 
     protected $protocol = 'https';
     protected $url = '';
@@ -189,6 +190,8 @@ class Client
             $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
         } elseif ($this->postDataInBody) {
             $options = ['body' => $data];
+        } elseif ($this->type === self::TYPE_MULTIPART) {
+            $options = ['multipart' => $data];
         } else {
             $options = ['form_params' => $data];
         }
@@ -277,6 +280,13 @@ class Client
                 break;
             case self::TYPE_FORM:
                 break;
+            case self::TYPE_MULTIPART:
+                $prepared = [];
+                foreach ($data as $param => $value) {
+                    $prepared[] = ['name' => $param, 'contents' => $value];
+                }
+                $data = $prepared;
+                break;
             default:
                 throw new \Exception('Type is not supported');
                 break;
@@ -305,7 +315,8 @@ class Client
             case self::TYPE_FORM:
                 $options['headers']['content-type'] = 'application/x-www-form-urlencoded';
                 break;
-
+            case self::TYPE_MULTIPART:
+                break;
             default:
                 throw new \Exception('Type is not supported');
         }
