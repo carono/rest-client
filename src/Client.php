@@ -116,6 +116,9 @@ class Client
         return true;
     }
 
+    /**
+     * @param $array
+     */
     public function setGuzzleOptions($array)
     {
         $this->_custom_guzzle_options = $array;
@@ -129,6 +132,11 @@ class Client
         return [];
     }
 
+    /**
+     * @param $a
+     * @param $b
+     * @return array|mixed
+     */
     protected static function merge($a, $b)
     {
         $args = func_get_args();
@@ -142,7 +150,7 @@ class Client
                     } else {
                         $res[$k] = $v;
                     }
-                } elseif (is_array($v) && isset($res[$k]) && is_array($res[$k])) {
+                } elseif (\is_array($v) && isset($res[$k]) && \is_array($res[$k])) {
                     $res[$k] = self::merge($res[$k], $v);
                 } else {
                     $res[$k] = $v;
@@ -161,9 +169,9 @@ class Client
     {
         if (strpos($this->url, '://')) {
             return $this->url . ($url ? '/' . $url : '');
-        } else {
-            return $this->protocol . '://' . $this->url . ($url ? '/' . $url : '');
         }
+
+        return $this->protocol . '://' . $this->url . ($url ? '/' . $url : '');
     }
 
     /**
@@ -268,7 +276,7 @@ class Client
         if (!$this->validate($data)) {
             throw new \Exception($this->getError());
         }
-        if ($this->method == 'GET') {
+        if ($this->method === 'GET') {
             return $data;
         }
         switch ($this->type) {
@@ -283,7 +291,13 @@ class Client
             case self::TYPE_MULTIPART:
                 $prepared = [];
                 foreach ($data as $param => $value) {
-                    $prepared[] = ['name' => $param, 'contents' => $value];
+                    if (\is_array($value)) {
+                        foreach ($value as $item) {
+                            $prepared[] = ['name' => $param . '[]', 'contents' => $item];
+                        }
+                    } else {
+                        $prepared[] = ['name' => $param, 'contents' => $value];
+                    }
                 }
                 $data = $prepared;
                 break;
