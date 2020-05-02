@@ -339,4 +339,36 @@ class Client
         }
         $this->_guzzleOptions = self::merge($options, $this->_custom_guzzle_options, $this->customGuzzleOptions());
     }
+
+    /**
+     * @param $value
+     */
+    public function setUrl($value)
+    {
+        $this->url = $value;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    /**
+     * @param $value
+     */
+    public function setType($value)
+    {
+        $this->type = $value;
+    }
+
+    /**
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
 }
