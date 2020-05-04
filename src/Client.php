@@ -33,7 +33,7 @@ class Client
     protected $_guzzleOptions = [];
     protected $_custom_guzzle_options = [];
     protected $_guzzle;
-    protected $_errors;
+    protected $_errors = [];
 
     /**
      * Client constructor.
