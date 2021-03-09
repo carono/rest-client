@@ -2,10 +2,9 @@
 
 namespace carono\rest;
 
-use function GuzzleHttp\Psr7\build_query;
 use GuzzleHttp\Client as GuzzleClient;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
+use function GuzzleHttp\Psr7\build_query;
 
 class Client
 {
@@ -21,6 +20,7 @@ class Client
      */
     public $request;
 
+    const TYPE_RAW = 'raw';
     const TYPE_JSON = 'json';
     const TYPE_XML = 'xml';
     const TYPE_FORM = 'form';
@@ -185,27 +185,32 @@ class Client
     /**
      * @param $urlRequest
      * @param array $data
+     * @param array $options
      * @return string|\stdClass|\SimpleXMLElement
      */
-    public function getContent($urlRequest, $data = [])
+    public function getContent($urlRequest, $data = [], $options = [])
     {
-        $options = [];
+        $method = $options['method'] ?? $this->method;
+        $postDataInBody = $options['postDataInBody'] ?? $this->postDataInBody;
+        $type = $options['type'] ?? $this->type;
+
+        $requestOptions = [];
         $this->guzzleOptions();
         $url = $this->buildUrl($urlRequest);
         $client = $this->getGuzzle();
         $data = $this->prepareData($data);
-        if ($this->method == 'GET') {
+        if ($method == 'GET') {
             $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
-        } elseif ($this->postDataInBody) {
-            $options = ['body' => $data];
-        } elseif ($this->type === self::TYPE_MULTIPART) {
-            $options = ['multipart' => $data];
+        } elseif ($postDataInBody) {
+            $requestOptions = ['body' => $data];
+        } elseif ($type === self::TYPE_MULTIPART) {
+            $requestOptions = ['multipart' => $data];
         } else {
-            $options = ['form_params' => $data];
+            $requestOptions = ['form_params' => $data];
         }
-        $request = $client->request($this->method, $url, self::merge($options, $this->_guzzleOptions));
+        $request = $client->request($method, $url, self::merge($requestOptions, $this->_guzzleOptions));
         $this->request = $request;
-        return $this->unSerialize($request->getBody()->getContents());
+        return $this->unSerialize($request->getBody()->getContents(), $options);
     }
 
     /**
@@ -228,19 +233,20 @@ class Client
 
     /**
      * @param $data
+     * @param array $options
      * @return mixed|null|\SimpleXMLElement
      */
-    public function unSerialize($data)
+    public function unSerialize($data, $options = [])
     {
-        $type = $this->output_type ? $this->output_type : $this->type;
+        $outputType = $options['output_type'] ?? $this->output_type;
+        $type = $options['type'] ?? $this->type;
+        $unSerializeType = $outputType ?: $type;
 
-        switch ($type) {
+        switch ($unSerializeType) {
             case self::TYPE_JSON:
                 return $this->unSerializeJson($data);
-                break;
             case self::TYPE_XML:
                 return $this->unSerializeXml($data);
-                break;
         }
         return $data;
     }
@@ -264,7 +270,8 @@ class Client
     }
 
     /**
-     * @param $data
+     * @param array $data
+     * @param array $options
      * @return string|array
      * @throws \Exception
      */
@@ -285,7 +292,6 @@ class Client
                 break;
             case self::TYPE_XML:
                 throw new \Exception('Xml type is not implemented yet');
-                break;
             case self::TYPE_FORM:
                 break;
             case self::TYPE_MULTIPART:
@@ -303,7 +309,6 @@ class Client
                 break;
             default:
                 throw new \Exception('Type is not supported');
-                break;
         }
         return $data;
     }
