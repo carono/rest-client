@@ -192,13 +192,12 @@ class Client
     {
         $method = $options['method'] ?? $this->method;
         $postDataInBody = $options['postDataInBody'] ?? $this->postDataInBody;
-        $type = $options['type'] ?? $this->type;
-
         $requestOptions = [];
         $this->guzzleOptions();
         $url = $this->buildUrl($urlRequest);
         $client = $this->getGuzzle();
         $data = $this->prepareData($data);
+        $type = $options['type'] ?? $this->type;
         if ($method == 'GET') {
             $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
         } elseif ($postDataInBody) {
