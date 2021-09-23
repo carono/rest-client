@@ -168,10 +168,12 @@ class Client
     protected function buildUrl($url)
     {
         if (strpos($this->url, '://')) {
-            return $this->url . ($url ? '/' . $url : '');
+            $start = $this->url;
+        } else {
+            $start = $this->protocol . '://' . $this->url;
         }
 
-        return $this->protocol . '://' . $this->url . ($url ? '/' . $url : '');
+        return $url ? rtrim($start, '/') . '/' . $url : $start;
     }
 
     /**
@@ -198,14 +200,17 @@ class Client
         $client = $this->getGuzzle();
         $data = $this->prepareData($data);
         $type = $options['type'] ?? $this->type;
-        if ($method == 'GET') {
-            $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
-        } elseif ($postDataInBody) {
-            $requestOptions = ['body' => $data];
-        } elseif ($type === self::TYPE_MULTIPART) {
-            $requestOptions = ['multipart' => $data];
-        } else {
-            $requestOptions = ['form_params' => $data];
+
+        if (!empty($data)) {
+            if ($method == 'GET') {
+                $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
+            } elseif ($postDataInBody) {
+                $requestOptions = ['body' => $data];
+            } elseif ($type === self::TYPE_MULTIPART) {
+                $requestOptions = ['multipart' => $data];
+            } else {
+                $requestOptions = ['form_params' => $data];
+            }
         }
         $request = $client->request($method, $url, self::merge($requestOptions, $this->_guzzleOptions));
         $this->request = $request;
