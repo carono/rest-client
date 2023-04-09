@@ -4,7 +4,6 @@ namespace carono\rest;
 
 use GuzzleHttp\Client as GuzzleClient;
 use Psr\Http\Message\ResponseInterface;
-use function GuzzleHttp\Psr7\build_query;
 
 class Client
 {
@@ -203,7 +202,7 @@ class Client
 
         if (!empty($data)) {
             if ($method == 'GET') {
-                $url = $url . (strpos($url, '?') ? '&' : '?') . build_query($data);
+                $url = $url . (strpos($url, '?') ? '&' : '?') . http_build_query($data);
             } elseif ($postDataInBody) {
                 $requestOptions = ['body' => $data];
             } elseif ($type === self::TYPE_MULTIPART) {
