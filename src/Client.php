@@ -35,6 +35,8 @@ class Client
     protected $_guzzle;
     protected $_errors = [];
 
+    private $_request_options = [];
+
     /**
      * Client constructor.
      *
@@ -192,6 +194,7 @@ class Client
      */
     public function getContent($urlRequest, $data = [], $options = [])
     {
+        $this->_request_options = $options;
         $method = $options['method'] ?? $this->method;
         $postDataInBody = $options['postDataInBody'] ?? $this->postDataInBody;
         $requestOptions = [];
@@ -281,13 +284,15 @@ class Client
      */
     protected function prepareData(array $data)
     {
+        $method = $this->_request_options['method'] ?? $this->method;
+
         $data = $this->beforePrepareData($data);
         $data = $this->filter($data);
 
         if (!$this->validate($data)) {
             throw new \Exception($this->getError());
         }
-        if ($this->method === 'GET') {
+        if ($method === 'GET') {
             return $data;
         }
         switch ($this->type) {
