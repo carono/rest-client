@@ -13,6 +13,7 @@ class Client
     public $method = 'GET';
     public $postDataInBody = false;
     public $useAuth = true;
+    public $berearToken;
 
     /**
      * @var ResponseInterface
@@ -326,6 +327,7 @@ class Client
         ];
         if ($this->proxy) {
             $options['proxy'] = $this->proxy;
+            $options['verify'] = false;
         }
         switch ($this->type) {
             case self::TYPE_JSON:
@@ -342,6 +344,10 @@ class Client
             default:
                 throw new \Exception('Type is not supported');
         }
+        if ($this->berearToken) {
+            $options['headers']['Authorization'] = 'Bearer ' . $this->berearToken;
+        }
+
         if (($this->login || $this->password) && $this->useAuth) {
             $options['auth'] = [$this->login, $this->password];
         }
