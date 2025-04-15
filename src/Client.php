@@ -169,6 +169,9 @@ class Client
      */
     protected function buildUrl($url)
     {
+        if (str_starts_with($url, 'http')) {
+            return $url;
+        }
         if (strpos($this->url, '://')) {
             $start = $this->url;
         } else {
