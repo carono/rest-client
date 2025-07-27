@@ -189,6 +189,11 @@ class Client
         return $this->_guzzle;
     }
 
+    public function beforeGetContent($data, $options)
+    {
+
+    }
+
     /**
      * @param $urlRequest
      * @param array $data
@@ -197,14 +202,20 @@ class Client
      */
     public function getContent($urlRequest, $data = [], $options = [])
     {
-        $this->_request_options = $options;
+        $oldMethod = $this->method;
         $method = $options['method'] ?? $this->method;
+        $this->method = $method;
+        $this->guzzleOptions();
+        $this->beforeGetContent($data, $options);
         $postDataInBody = $options['postDataInBody'] ?? $this->postDataInBody;
         $requestOptions = [];
-        $this->guzzleOptions();
+
         $url = $this->buildUrl($urlRequest);
         $client = $this->getGuzzle();
-        $data = $this->prepareData($data);
+
+        if ($this->method != 'GET') {
+            $data = $this->prepareData($data);
+        }
         $type = $options['type'] ?? $this->type;
 
         if (!empty($data)) {
@@ -218,9 +229,12 @@ class Client
                 $requestOptions = ['form_params' => $data];
             }
         }
-        $request = $client->request($method, $url, self::merge($requestOptions, $this->_guzzleOptions));
+        $guzzleOptions = self::merge($requestOptions, $this->_guzzleOptions);
+        $request = $client->request($method, $url, $guzzleOptions);
         $this->request = $request;
-        return $this->unSerialize($request->getBody()->getContents(), $options);
+        $result = $this->unSerialize($request->getBody()->getContents(), $options);
+        $this->method = $oldMethod;
+        return $result;
     }
 
     /**
