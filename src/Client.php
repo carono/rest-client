@@ -7,12 +7,19 @@ use Psr\Http\Message\ResponseInterface;
 
 class Client
 {
+
     public $login;
+
     public $password;
+
     public $proxy;
+
     public $method = 'GET';
+
     public $postDataInBody = false;
+
     public $useAuth = true;
+
     public $berearToken;
 
     /**
@@ -21,18 +28,29 @@ class Client
     public $request;
 
     const TYPE_RAW = 'raw';
+
     const TYPE_JSON = 'json';
+
     const TYPE_XML = 'xml';
+
     const TYPE_FORM = 'form';
+
     const TYPE_MULTIPART = 'multipart';
 
     protected $protocol = 'https';
+
     protected $url = '';
+
     protected $type = 'json';
+
     protected $output_type;
+
     protected $_guzzleOptions = [];
+
     protected $_custom_guzzle_options = [];
+
     protected $_guzzle;
+
     protected $_errors = [];
 
     private $_request_options = [];
@@ -40,7 +58,7 @@ class Client
     /**
      * Client constructor.
      *
-     * @param array $config
+     * @param  array  $config
      */
     public function __construct(array $config = [])
     {
@@ -60,7 +78,8 @@ class Client
     }
 
     /**
-     * @param bool $asString
+     * @param  bool  $asString
+     *
      * @return string
      */
     public function getError($asString = true)
@@ -70,8 +89,9 @@ class Client
         }
         $error = ['Ошибка валидации параметров'];
         foreach ($this->_errors as $param => $errors) {
-            $error[] = $param . ' - ' . join('; ', $errors);
+            $error[] = $param.' - '.join('; ', $errors);
         }
+
         return join("\n", $error);
     }
 
@@ -80,11 +100,13 @@ class Client
         foreach ($data as $param => $value) {
             $this->validateParam($param, $value);
         }
+
         return !count($this->_errors);
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
+     *
      * @return array
      */
     public function filter(array $data)
@@ -95,12 +117,14 @@ class Client
                 $result[$param] = $filtered;
             }
         }
+
         return $result;
     }
 
     /**
      * @param $param
      * @param $value
+     *
      * @return mixed
      */
     public function filterParam($param, $value)
@@ -111,6 +135,7 @@ class Client
     /**
      * @param $param
      * @param $value
+     *
      * @return bool
      */
     public function validateParam($param, $value)
@@ -137,6 +162,7 @@ class Client
     /**
      * @param $a
      * @param $b
+     *
      * @return array|mixed
      */
     protected static function merge($a, $b)
@@ -165,6 +191,7 @@ class Client
 
     /**
      * @param $url
+     *
      * @return string
      */
     protected function buildUrl($url)
@@ -175,10 +202,10 @@ class Client
         if (strpos($this->url, '://')) {
             $start = $this->url;
         } else {
-            $start = $this->protocol . '://' . $this->url;
+            $start = $this->protocol.'://'.$this->url;
         }
 
-        return $url ? rtrim($start, '/') . '/' . $url : $start;
+        return $url ? rtrim($start, '/').'/'.$url : $start;
     }
 
     /**
@@ -191,13 +218,13 @@ class Client
 
     public function beforeGetContent($data, $options)
     {
-
     }
 
     /**
      * @param $urlRequest
-     * @param array $data
-     * @param array $options
+     * @param  array  $data
+     * @param  array  $options
+     *
      * @return string|\stdClass|\SimpleXMLElement
      */
     public function getContent($urlRequest, $data = [], $options = [])
@@ -213,14 +240,14 @@ class Client
         $url = $this->buildUrl($urlRequest);
         $client = $this->getGuzzle();
 
-        if ($this->method != 'GET') {
-            $data = $this->prepareData($data);
-        }
         $type = $options['type'] ?? $this->type;
+        if ($this->method != 'GET') {
+            $data = $this->prepareData($data, $type);
+        }
 
         if (!empty($data)) {
             if ($method == 'GET') {
-                $url = $url . (strpos($url, '?') ? '&' : '?') . http_build_query($data);
+                $url = $url.(strpos($url, '?') ? '&' : '?').http_build_query($data);
             } elseif ($postDataInBody) {
                 $requestOptions = ['body' => $data];
             } elseif ($type === self::TYPE_MULTIPART) {
@@ -234,11 +261,13 @@ class Client
         $this->request = $request;
         $result = $this->unSerialize($request->getBody()->getContents(), $options);
         $this->method = $oldMethod;
+
         return $result;
     }
 
     /**
      * @param $data
+     *
      * @return mixed
      */
     protected function unSerializeJson($data)
@@ -248,6 +277,7 @@ class Client
 
     /**
      * @param $data
+     *
      * @return \SimpleXMLElement
      */
     protected function unSerializeXml($data)
@@ -257,7 +287,8 @@ class Client
 
     /**
      * @param $data
-     * @param array $options
+     * @param  array  $options
+     *
      * @return mixed|null|\SimpleXMLElement
      */
     public function unSerialize($data, $options = [])
@@ -272,6 +303,7 @@ class Client
             case self::TYPE_XML:
                 return $this->unSerializeXml($data);
         }
+
         return $data;
     }
 
@@ -285,7 +317,8 @@ class Client
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
+     *
      * @return array
      */
     protected function beforePrepareData(array $data)
@@ -294,12 +327,13 @@ class Client
     }
 
     /**
-     * @param array $data
-     * @param array $options
+     * @param  array  $data
+     * @param  array  $options
+     *
      * @return string|array
      * @throws \Exception
      */
-    protected function prepareData(array $data)
+    protected function prepareData(array $data, $type)
     {
         $method = $this->_request_options['method'] ?? $this->method;
 
@@ -312,7 +346,7 @@ class Client
         if ($method === 'GET') {
             return $data;
         }
-        switch ($this->type) {
+        switch ($type) {
             case self::TYPE_JSON:
                 $data = \GuzzleHttp\json_encode($data);
                 break;
@@ -325,7 +359,7 @@ class Client
                 foreach ($data as $param => $value) {
                     if (\is_array($value)) {
                         foreach ($value as $item) {
-                            $prepared[] = ['name' => $param . '[]', 'contents' => $item];
+                            $prepared[] = ['name' => $param.'[]', 'contents' => $item];
                         }
                     } else {
                         $prepared[] = ['name' => $param, 'contents' => $value];
@@ -334,8 +368,9 @@ class Client
                 $data = $prepared;
                 break;
             default:
-                throw new \Exception('Type is not supported');
+                throw new \Exception("Type $type is not supported");
         }
+
         return $data;
     }
 
@@ -345,7 +380,7 @@ class Client
     public function guzzleOptions()
     {
         $options = [
-            'headers' => []
+            'headers' => [],
         ];
         if ($this->proxy) {
             $options['proxy'] = $this->proxy;
@@ -367,7 +402,7 @@ class Client
                 throw new \Exception('Type is not supported');
         }
         if ($this->berearToken) {
-            $options['headers']['Authorization'] = 'Bearer ' . $this->berearToken;
+            $options['headers']['Authorization'] = 'Bearer '.$this->berearToken;
         }
 
         if (($this->login || $this->password) && $this->useAuth) {
@@ -407,4 +442,5 @@ class Client
     {
         return $this->type;
     }
+
 }
